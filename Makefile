@@ -7,7 +7,6 @@ createdb:
 	docker exec -it postgresbank createdb -U root -O root bank 
 
 
-
 migrateup:
 	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/bank?sslmode=disable" -verbose up
 
