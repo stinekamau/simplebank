@@ -6,7 +6,6 @@ postgresbank:
 createdb: 
 	docker exec -it postgresbank createdb -U root -O root bank 
 
-
 migrateup:
 	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/bank?sslmode=disable" -verbose up
 
@@ -24,6 +23,6 @@ sqlc:
 test: 
 	go test -v -cover ./...
 
-.PHONY:postgresbank createdb createmysqldb dropdb dropmysqldb migrateup migratedown sqlc test
+.PHONY:postgresbank createdb  dropdb  migrateup migratedown sqlc test
 
 
