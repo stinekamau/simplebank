@@ -18,9 +18,11 @@ jobs:
         image: postgres:12-alpine
         # Provide the password for postgres
         env:
+          POSTGRES_HOST: postgres
+          POSTGRES_PORT: 5432
           POSTGRES_USER: root
-          POSTGRES_PASSWORD: postgres
-          POSTGRESS_DB: simplebank
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: bank
         # Set health checks to wait until postgres has started
         options: >-
           --health-cmd pg_isready
