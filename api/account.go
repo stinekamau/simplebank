@@ -101,3 +101,29 @@ func (s *Server) listAccounts(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, accounts)
 
 }
+
+type deleteAccountRequestParam struct {
+	ID int64 `form:"id" binding:"required,min=1"`
+}
+
+func (s *Server) deleteAccount(ctx *gin.Context) {
+	var req deleteAccountRequestParam
+
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := s.store.DeleteAccount(ctx, req.ID); err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"success": fmt.Sprintf("Successfully deleted the account with id: %d\n", req.ID)})
+
+}

@@ -9,23 +9,24 @@ import (
 
 	"github.com/stinekamau/simplebank/api"
 	db "github.com/stinekamau/simplebank/db/sqlc"
+	"github.com/stinekamau/simplebank/utils"
 )
 
 func main() {
-	const (
-		dbDriver = "postgres"
-		dbSource = "postgresql://root:secret@localhost:5432/bank?sslmode=disable"
-	)
+	config, err := utils.LoadConfig(".")
+	if err != nil {
+		panic(fmt.Sprintf("couldn't load environment variables: %v", err))
+	}
 
-	conn, err := sql.Open(dbDriver, dbSource)
+	conn, err := sql.Open(config.DBDriver, config.DBSource)
 	if err != nil {
 		log.Fatalf("Error starting the database, %+v", err)
 	}
-	if err := conn.Ping();err!=nil{
+	if err := conn.Ping(); err != nil {
 		fmt.Printf("Database ping results to an error")
 	}
 
 	store := db.NewStore(conn)
 	server := api.NewServer(store)
-	server.Start(":8080")
+	server.Start(config.ServerAddress)
 }

@@ -54,15 +54,86 @@ type TransferTxResult struct {
 	ToEntry     Entry    `json:"to_entry"`
 }
 
+func (store *Store) setupBalanceInventory(ctx context.Context, accountID int64, amount int64, isSender bool) (updatedAccount Account, entry Entry, err error) {
+	// Update the  fromAccount balance
+	account, _ := store.GetAccount(ctx, accountID)
+
+	var argsUpdate UpdateAccountParams
+	// Create update args param
+
+	if isSender {
+		argsUpdate = UpdateAccountParams{
+			ID:      accountID,
+			Balance: account.Balance - amount,
+		}
+	} else {
+		argsUpdate = UpdateAccountParams{
+			ID:      accountID,
+			Balance: account.Balance + amount,
+		}
+	}
+
+	// Deduct the balance from the fromAccount
+	if updatedAccount, err = store.UpdateAccount(ctx, argsUpdate); err != nil {
+		return Account{}, Entry{}, fmt.Errorf("error updating the account: %d", accountID)
+	}
+
+	var argsEntry CreateEntryParams
+
+	if isSender {
+		argsEntry = CreateEntryParams{
+			AccountID: accountID,
+			Amount:    -amount,
+		}
+	} else {
+		argsEntry = CreateEntryParams{
+			AccountID: accountID,
+			Amount:    amount,
+		}
+	}
+
+	// Create an entry
+	if entry, err = store.CreateEntry(ctx, argsEntry); err != nil {
+		return Account{}, Entry{}, fmt.Errorf("cannot create entry for the transaction for account id %d", accountID)
+	}
+
+	return updatedAccount, entry, nil
+
+}
+
 // Transfer tx performs a money transfer from one account to another
 // It creates a transfer record, add account entries, and updates account's balance within a single db transaction
 
 func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error) {
 	var result TransferTxResult
 	err := store.execTx(ctx, func(q *Queries) error {
+		fromUpdatedAccount, fromEntry, err := store.setupBalanceInventory(ctx, arg.FromAccountID, arg.Amount, true)
 
+		if err != nil {
+			return err
+		}
+		toUpdatedAccount, toEntry, err := store.setupBalanceInventory(ctx, arg.ToAccountID, arg.Amount, false)
+		if err != nil {
+			return err
+		}
+
+		argsTransfer := CreateTransferParams(arg)
+		// Create the transfer
+		transfer, err := store.CreateTransfer(ctx, argsTransfer)
+		if err != nil {
+			return err
+		}
+
+		result = TransferTxResult{
+			Transfer:    transfer,
+			FromAccount: fromUpdatedAccount,
+			ToAccount:   toUpdatedAccount,
+			FromEntry:   fromEntry,
+			ToEntry:     toEntry,
+		}
 
 		return nil
+
 	})
 
 	return result, err
