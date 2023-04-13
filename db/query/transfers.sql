@@ -18,5 +18,4 @@ UPDATE  transfers  SET amount = $2 WHERE id = $1 RETURNING *;
 -- name: DeleteTransfer :one
 DELETE from transfers  WHERE id = $1 RETURNING *; 
 
--- name: DeleteTransfers :batchexec
-DELETE FROM transfers where id = $1
+

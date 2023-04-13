@@ -9,12 +9,12 @@ import (
 
 type Server struct {
 	// need the store  to access the db
-	store *db.Store
+	store db.Store
 	// router to map requests to handler functions
 	router *gin.Engine
 }
 
-func NewServer(store *db.Store) *Server {
+func NewServer(store db.Store) *Server {
 	// Create a new store
 	server := &Server{store: store}
 
