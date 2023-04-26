@@ -15,32 +15,14 @@ type Server struct {
 	// router to map requests to handler functions
 	router *gin.Engine
 	// Add a token maker field
-	tokenMaker *token.Maker
+	tokenMaker token.Maker
 
 	config utils.Config
 }
 
-func NewServer(config utils.Config, store db.Store) *Server {
-	// Create a new store
-	server := &Server{store: store, config: config }
-
-	tokenMaker, err := token.NewPasetoMaker()
-
-	if err != nil {
-		panic("could'nt create token")
-	}
-	// add the token maker
-	server.tokenMaker = &tokenMaker
-
+func (server *Server) setupRouter() {
 	// add the engine
 	router := gin.Default()
-
-	// Check for the validator engine
-	engine := binding.Validator.Engine().(validator.Validate)
-
-	// Register the validation function
-	engine.RegisterValidation("currency", validCurrency)
-
 	// Add the routes
 	router.POST("/accounts", server.createAccount)
 	router.GET("/accounts/:id", server.getAccount)
@@ -48,8 +30,32 @@ func NewServer(config utils.Config, store db.Store) *Server {
 	router.GET("/accounts/delete", server.deleteAccount)
 
 	router.POST("/transfers", server.createTransfer)
+	router.POST("/users", server.createUser)
+	router.POST("/user/login", server.loginUser)
 
 	server.router = router
 
+}
+func NewServer(config utils.Config, store db.Store) *Server {
+	// Create a new store
+	server := &Server{store: store, config: config}
+
+	tokenMaker, err := token.NewPasetoMaker()
+
+	if err != nil {
+		panic("could'nt create token")
+	}
+
+	server.setupRouter()
+	// add the token maker
+	server.tokenMaker = tokenMaker
+
+	// Check for the validator engine
+	engine := binding.Validator.Engine().(*validator.Validate)
+
+	// Register the validation function
+	engine.RegisterValidation("currency", validCurrency)
+
 	return server
+
 }
